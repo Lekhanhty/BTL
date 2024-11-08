@@ -1,0 +1,319 @@
+#include <iostream>
+#include <string>
+using namespace std;
+
+struct Product {
+    int id;
+    char name[50];
+    float price;
+    int quantity;
+    char supplier[50];
+    char expiryDate[11];
+};
+
+int Menu() {
+    int choice;
+    cout << "1. Nhap nhieu Product" << endl;  // New option for multiple product input
+    cout << "2. Nhap Product vao dau danh sach" << endl;
+    cout << "3. Nhap Product vao cuoi danh sach" << endl;
+    cout << "4. Nhap Product vao vi tri bat ky" << endl;
+    cout << "5. In danh sach Product" << endl;
+    cout << "6. Tim kiem theo Ma Vach" << endl;
+    cout << "7. Xoa tat ca Product" << endl;
+    cout << "8. Xoa Product dau danh sach" << endl;
+    cout << "9. Xoa Product cuoi danh sach" << endl;
+    cout << "10. Xoa Product o vi tri bat ky" << endl;
+    cout << "11. Sap xep Product theo ID" << endl;
+    cout << "12. Thoat" << endl;  // Adjusted exit option
+    cout << "Nhap lua chon cua ban: ";
+    cin >> choice;
+    cin.ignore();
+    return choice;
+}
+
+void inputProduct(Product &p, int id) {
+    p.id = id;
+    cout << "Nhap ten san pham: ";
+    cin.getline(p.name, 50);
+    cout << "Nhap gia san pham: ";
+    cin >> p.price;
+    cout << "Nhap so luong ton kho: ";
+    cin >> p.quantity;
+    cin.ignore();
+    cout << "Nhap nha cung cap: ";
+    cin.getline(p.supplier, 50);
+    cout << "Nhap han su dung (dd/mm/yyyy): ";
+    cin.getline(p.expiryDate, 11);
+}
+
+void displayProduct(const Product &p) {
+    cout << "\nMa san pham: " << p.id << endl;
+    cout << "Ten san pham: " << p.name << endl;
+    cout << "Gia ban: " << p.price << endl;
+    cout << "So luong ton kho: " << p.quantity << endl;
+    cout << "Nha cung cap: " << p.supplier << endl;
+    cout << "Han su dung: " << p.expiryDate << endl;
+}
+
+struct Node {
+    Product data;
+    Node *next;
+};
+
+struct List {
+    Node *head;
+    Node *tail;
+    int size;
+
+    List() : head(NULL), tail(NULL), size(0) {}
+
+    Node *createNode(Product sp) {
+        Node *p = new Node();
+        p->data = sp;
+        p->next = NULL;
+        return p;
+    }
+
+    void addFirst(Product sp) {
+        Node *p = createNode(sp);
+        if (head == NULL) {
+            head = tail = p;
+        } else {
+            p->next = head;
+            head = p;
+        }
+        size++;
+    }
+
+    void addLast(Product sp) {
+        Node *p = createNode(sp);
+        if (head == NULL) {
+            head = tail = p;
+        } else {
+            tail->next = p;
+            tail = p;
+        }
+        size++;
+    }
+
+    void addAtPosition(Product sp, int position) {
+        if (position <= 1) {
+            addFirst(sp);
+        } else if (position > size) {
+            addLast(sp);
+        } else {
+            Node *p = createNode(sp);
+            Node *temp = head;
+            for (int i = 1; i < position - 1; i++) {
+                temp = temp->next;
+            }
+            p->next = temp->next;
+            temp->next = p;
+            size++;
+        }
+    }
+
+    void print() {
+        cout << "\nDanh sach cac san pham: " << endl;
+        for (Node *i = head; i != NULL; i = i->next) {
+            displayProduct(i->data);
+            cout << endl;
+        }
+    }
+
+    void clear() {
+        while (head != NULL) {
+            Node *p = head;
+            head = head->next;
+            delete p;
+        }
+        tail = NULL;
+        size = 0;
+    }
+
+    void searchByID(int id) {
+        bool found = false;
+        for (Node *i = head; i != NULL; i = i->next) {
+            if (i->data.id == id) {
+                cout << "San pham tim thay: " << endl;
+                displayProduct(i->data);
+                found = true;
+                break;
+            }
+        }
+        if (!found) {
+            cout << "Khong tim thay san pham voi ma vach: " << id << endl;
+        }
+    }
+
+    void removeFirst() {
+        if (head == NULL) {
+            cout << "Danh sach rong, khong co san pham de xoa." << endl;
+            return;
+        }
+        Node *temp = head;
+        head = head->next;
+        delete temp;
+        size--;
+        if (head == NULL) {
+            tail = NULL;
+        }
+        cout << "Da xoa san pham dau danh sach." << endl;
+    }
+
+    void removeLast() {
+        if (head == NULL) {
+            cout << "Danh sach rong, khong co san pham de xoa." << endl;
+            return;
+        }
+        if (head == tail) {
+            delete head;
+            head = tail = NULL;
+        } else {
+            Node *temp = head;
+            while (temp->next != tail) {
+                temp = temp->next;
+            }
+            delete tail;
+            tail = temp;
+            tail->next = NULL;
+        }
+        size--;
+        cout << "Da xoa san pham cuoi danh sach." << endl;
+    }
+
+    void removeAtPosition(int position) {
+        if (position < 1 || position > size) {
+            cout << "Vi tri khong hop le." << endl;
+            return;
+        }
+        if (position == 1) {
+            removeFirst();
+        } else if (position == size) {
+            removeLast();
+        } else {
+            Node *temp = head;
+            for (int i = 1; i < position - 1; i++) {
+                temp = temp->next;
+            }
+            Node *toDelete = temp->next;
+            temp->next = toDelete->next;
+            delete toDelete;
+            size--;
+            cout << "Da xoa san pham o vi tri " << position << "." << endl;
+        }
+    }
+
+    void sortByID() {
+        if (head == NULL || head->next == NULL) {
+            return; // No need to sort if the list is empty or has one item
+        }
+
+        bool swapped;
+        do {
+            swapped = false;
+            Node *current = head;
+            while (current->next != NULL) {
+                if (current->data.id > current->next->data.id) {
+                    // Swap data
+                    Product temp = current->data;
+                    current->data = current->next->data;
+                    current->next->data = temp;
+                    swapped = true;
+                }
+                current = current->next;
+            }
+        } while (swapped);
+    }
+
+    // Function to input multiple products
+    void inputMultipleProducts(int count) {
+        for (int i = 0; i < count; i++) {
+            Product sp;
+            inputProduct(sp, size + 1); // Assign ID based on current size
+            addLast(sp); // Add to the end of the list
+        }
+    }
+};
+
+int main() {
+    List productList;
+    int choice;
+    int idCounter = 1;
+
+    while (true) {
+        choice = Menu();
+        switch (choice) {
+        	case 1: { // New case for multiple product input
+                int numProducts;
+                cout << "Nhap so san pham can them: ";
+                cin >> numProducts;
+                cin.ignore();
+                productList.inputMultipleProducts(numProducts);
+                break;
+            }
+            case 2: {
+                Product sp;
+                inputProduct(sp, idCounter++);
+                productList.addFirst(sp);
+                break;
+            }
+            case 3: {
+                Product sp;
+                inputProduct(sp, idCounter++);
+                productList.addLast(sp);
+                break;
+            }
+            case 4: {
+                Product sp;
+                inputProduct(sp, idCounter++);
+                int position;
+                cout << "Nhap vi tri can them: ";
+                cin >> position;
+                cin.ignore();
+                productList.addAtPosition(sp, position);
+                break;
+            }
+            case 5:
+                productList.print();
+                break;
+            case 6: {
+                int searchID;
+                cout << "Nhap ma vach can tim: ";
+                cin >> searchID;
+                cin.ignore();
+                productList.searchByID(searchID);
+                break;
+            }
+            case 7:
+                productList.clear();
+                cout << "Danh sach da duoc xoa." << endl;
+                break;
+            case 8:
+                productList.removeFirst();
+                break;
+            case 9:
+                productList.removeLast();
+                break;
+            case 10: {
+                int position;
+                cout << "Nhap vi tri can xoa: ";
+                cin >> position;
+                cin.ignore();
+                productList.removeAtPosition(position);
+                break;
+			}
+            case 11: // Sort by ID
+                productList.sortByID();
+                cout << "Danh sach da duoc sap xep theo ID." << endl;
+                break;
+			
+            case 12:
+                cout << "Thoat chuong trinh." << endl;
+                return 0;
+            default:
+                cout << "Lua chon khong hop le. Vui long chon lai." << endl;
+        }
+    }
+    return 0;
+}
